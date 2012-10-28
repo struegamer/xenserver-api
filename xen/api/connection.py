@@ -21,6 +21,7 @@ import sys
 import xmlrpclib
 
 from exceptions import ConnectionException
+from parser import Message
 
 class Connection(object):
     """Connection Object
@@ -38,6 +39,20 @@ class Connection(object):
         self._proxy = None
 
     def _create_proxy(self):
+        """
+        Type:
+            Method
+        
+        Scope:
+            Private
+            
+        Description:
+            Creates the proxy to the Xen Server XMLRPC API.
+            Overwrite this method to connect differently.
+            
+        Raises:
+            ConnectionException
+        """
         if (self._xenserver_url is not None and self._xenserver_url != ''):
             try:
                 self._proxy = xmlrpclib.ServerProxy(self._xenserver_url,
@@ -57,3 +72,10 @@ class Connection(object):
         return self._proxy
     proxy = property(_get_proxy, doc='XenServer Connection')
 
+
+    def call(self, method, *args, **kwargs):
+        result = eval('self.proxy.{0}'.format(method))(*args, **kwargs)
+        if result is not None:
+            m = Message(result)
+            return m
+        return None
