@@ -17,10 +17,25 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 ###############################################################################
 
+import sys
 
-from constants import __API_VERSION__
-from connection import Connection
-from parser import Message
+from exceptions import SessionException
 from session import Session
-from vms import VM
-from session import AuthenticationException
+
+from constants import VM_TYPE_HOST
+from constants import VM_TYPE_TEMPLATE
+
+
+class VM(object):
+    def __init__(self, session=None):
+        self._session = session
+
+    def list(self, types=VM_TYPE_HOST | VM_TYPE_TEMPLATE):
+        if self._session is None:
+            raise SessionException('Session not Initialized')
+        result = self._session.connection.proxy.VM.get_all(self.
+                                                           _session.session_id)
+
+
+
+

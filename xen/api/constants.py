@@ -18,9 +18,11 @@
 ###############################################################################
 
 
-from constants import __API_VERSION__
-from connection import Connection
-from parser import Message
-from session import Session
-from vms import VM
-from session import AuthenticationException
+__API_VERSION__ = '6.0'
+
+
+MSG_STATUS_SUCCESS = 'Success'
+MSG_STATUS_FAILURE = 'Failure'
+
+VM_TYPE_HOST = 1
+VM_TYPE_TEMPLATE = 2

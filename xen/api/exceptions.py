@@ -18,9 +18,26 @@
 ###############################################################################
 
 
-from constants import __API_VERSION__
-from connection import Connection
-from parser import Message
-from session import Session
-from vms import VM
-from session import AuthenticationException
+class ConnectionException(Exception):
+    """Connection Excpetion
+    
+    Will be thrown when a Connection object is normally not 
+    initialized or None
+    """
+    pass
+
+
+class SessionException(Exception):
+    pass
+
+
+class AuthenticationException(Exception):
+    def __init__(self, error_arr):
+        self._error = error_arr
+        self.error_no = self._error[0]
+        self.error_msg = self._error[2]
+        self.error_user = self._error[1]
+
+    def __str__(self):
+        return 'Error: {0} => {1} ({2})'.format(self._error[0], self._error[2],
+                                              self._error[1])

@@ -20,6 +20,8 @@
 import sys
 import xmlrpclib
 
+from exceptions import ConnectionException
+
 class Connection(object):
     """Connection Object
     
@@ -37,8 +39,13 @@ class Connection(object):
 
     def _create_proxy(self):
         if (self._xenserver_url is not None and self._xenserver_url != ''):
-            self._proxy = xmlrpc.ServerProxy(self._xenserver_url,
-                                             allow_none=True)
+            try:
+                self._proxy = xmlrpclib.ServerProxy(self._xenserver_url,
+                                                    allow_none=True)
+            except Exception, e:
+                print('File: {0}'.format(__file__))
+                print(e)
+                raise ConnectionException('Connection Error')
 
     def _connect(self):
         if self._proxy is None:
@@ -48,5 +55,5 @@ class Connection(object):
         if self._proxy is None:
             self._connect()
         return self._proxy
-    _conn = property(get_proxy, doc='XenServer Connection')
+    proxy = property(_get_proxy, doc='XenServer Connection')
 

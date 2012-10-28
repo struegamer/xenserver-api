@@ -21,12 +21,17 @@ import sys
 import types
 
 
+from constants import MSG_STATUS_SUCCESS
+from constants import MSG_STATUS_FAILURE
+
+
 class Message(object):
     def __init__(self, message=None):
         self._message = message
         self._status = None
         self._vlaue = None
         self._error_descr = None
+        self._parse()
 
     def _parse(self):
         if self._message is None:
@@ -36,24 +41,35 @@ class Message(object):
             self._result = None
             return False
         if 'Status' in self._message:
-            self._status = self._messsage.get('Status', None)
-            if self._status == 'Success':
+            self._status = self._message.get('Status', None)
+            if self._status == MSG_STATUS_SUCCESS:
                 self._value = self._message.get('Value', None)
                 self._error_descr = None
-            if self._status == 'Failure':
+            if self._status == MSG_STATUS_FAILURE:
+                error_descr = self._message.get('ErrorDescription', None)
                 self._value = None
-                self._error_descr = self._message.get('ErrorDescription', None)
+                self._error_no = error_descr[0]
+                self._error_message = error_descr[2]
+                self._error_descr = error_descr
+
 
     def _get_status(self):
         return self._status
-    msg_status = property(_get_status, doc='Nessage Status Property')
+    status = property(_get_status, doc='Nessage Status Property')
 
     def _get_value(self):
         return self._value
-    msg_result = propery(_get_value, doc='Message Result Property')
+    result = property(_get_value, doc='Message Result Property')
 
-    def _get_error_description(self):
+    def _get_error_message(self):
+        return self._error_message
+    error_message = property(_get_error_message, doc='Message Error String')
+
+    def _get_error_no(self):
+        return self._error_no
+    error_no = property(_get_error_no, doc='Message Error Number')
+
+    def _get_raw_error(self):
         return self._error_descr
-    msg_error_str = propery(_get_error_description,
-                            doc='Message Error Description')
+    error = property(_get_raw_error, doc='Message Raw Error Result')
 
