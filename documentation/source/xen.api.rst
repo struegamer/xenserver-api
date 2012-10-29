@@ -41,6 +41,14 @@ api Package
     :undoc-members:
     :show-inheritance:
 
+:mod:`properties` Module
+------------------------
+
+.. automodule:: xen.api.properties
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 :mod:`session` Module
 ---------------------
 
@@ -53,6 +61,14 @@ api Package
 -----------------
 
 .. automodule:: xen.api.vms
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`xenserver` Module
+-----------------------
+
+.. automodule:: xen.api.xenserver
     :members:
     :undoc-members:
     :show-inheritance:
