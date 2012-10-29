@@ -23,9 +23,10 @@ try:
     from constants import __API_VERSION__
     from constants import MSG_STATUS_SUCCESS
     from constants import MSG_STATUS_FAILURE
+    from exceptions import ConnectionException
     from exceptions import AuthenticationException
     from connection import Connection
-    from connection import ConnectionException
+    from properties import Properties
     from parser import Message
 except ImportError, e:
     print('ImportError occured')
@@ -33,41 +34,41 @@ except ImportError, e:
     sys.exit(1)
 
 
-class Session(object):
-    def __init__(self, connection=None, username=None, password=None):
-        self._conn = connection
-        self._user = username
-        self._password = password
-        self._authenticated = False
-        self._session_id = None
+class Session(Properties):
 
-    def _get_auth(self):
-        return self._authenticated
-    authenticated = property(_get_auth, doc='Authentication Status Property')
+    @staticmethod
+    def logout(session=None, slave=False):
+        """
+        Type:
+            Method
+            
+        Scope:
+            Public
+        
+        Description:
+            | When slave is False logout  from a Xen Server/Pool Master
+            | When slave is True logout from a slave Xen Server
+            
+        Parameters:
+            session: :py:class:`xen.api.session.Session`
+            slave: bool
+            
+        Returns:
+            bool
+        """
+        try:
+            if slave is False:
+                session._call('logout', session.session_id)
+            else:
+                session._call('local_logout', session.slave_session_id)
+        except Exception, e:
+            print(e)
+            return False
+        session.authenticated = False
+        return True
 
-    def _get_session_id(self):
-        return self._session_id
-    session_id = property(_get_session_id, doc='Session ID Property')
-
-    def _get_connection(self):
-        return self._conn
-    connection = property(_get_connection, doc='Connection Property')
-
-    def _call(self, method, *args, **kwargs):
-        if self._authenticated:
-            result = self._conn.call('{0}.{1}'.format('session', method), *args,
-                                      **kwargs)
-            if result.status == MSG_STATUS_SUCCESS:
-                return result.result
-            if result.status == MSG_STATUS_FAILURE:
-                raise Exception('{0}'.format(result.error_no))
-        raise Exception('Not Authenticated')
-
-    #
-    # Public Methods
-    #
-
-    def login(self, slave=False):
+    @classmethod
+    def login(cls, connection, username, password, slave=False):
         """
         Type:
             Method
@@ -82,93 +83,79 @@ class Session(object):
             | and this slave needs to be set in ememergency mode
             
         Parameters:
+            connection: :py:class:`xen.api.connection.Connection`
+            username: str
+            password: str
             slave: bool
             
         Returns: 
-            bool
+            :py:class:`xen.api.session.Session`
             
         Raises:
             ConnectionException: when connection is not initialized
         """
-        if self._conn is None:
+        if connection is None:
             raise ConnectionException('Your connection is not initialized!')
+        session_obj = Session(connection)
         try:
             if slave is False:
-                result = self._call('login_with_password', self._user,
-                                    self._password,
+                result = session_obj._call('login_with_password', username,
+                                    password,
                                     __API_VERSION__)
+                session_obj.session_id = result
+                session_obj.authenticated = True
             else:
-                result = self._call('slave_local_login_with_password',
-                                  self._user, self._password)
-
-            self._session_id = result
-            self._authenticated = True
-            return True
+                result = session_obj._call('slave_local_login_with_password',
+                                  username, password)
+                session_obj.session_id = result
+                session_obj.authenticated = True
+            return session_obj
         except Exception, e:
             print(e)
-            self._authenticated = False
-            return False
-        return False
-
-    def logout(self, slave=False):
-        """
-        Type:
-            Method
-            
-        Scope:
-            Public
-        
-        Description:
-            | When slave is False logout  from a Xen Server/Pool Master
-            | When slave is True logout from a slave Xen Server
-            
-        Parameters:
-            slave: bool
-            
-        Returns:
-            Bool
-        """
-        try:
-            if slave is False:
-                self._call('logout', self._session_id)
-            else:
-                self._call('local_logout', self._session_id)
-        except Exception, e:
-            print(e)
-            return False
-        self._authenticated = False
-        return True
-
-    def change_password(self, old_password, new_password):
-        """
-        Type:
-            Method
-        
-        Scope:
-            Public
-            
-        Description:
-            Change password for the actual user sesssion.
-            
-        Parameters:
-            old_password: str
-            new_password: str
-        
-        Returns:
-            Void
-        """
-        self._call('change_password', old_password, new_password)
+            return None
+        return None
 
 
+    #
+    # Private Methods
+    #
+    def _call(self, method, *args, **kwargs):
+        result = self._conn.call('{0}.{1}'.format('session', method), *args,
+                                 **kwargs)
+        if result.status == MSG_STATUS_SUCCESS:
+            return result.result
+        if result.status == MSG_STATUS_FAILURE:
+            raise Exception('{0}'.format(result.error_no))
+        raise Exception('Not Authenticated')
 
-
-
-
-class SessionProperty(object):
-    def __init__(self,):
     #
     # Public Properties
     #
+    @property
+    def authenticated(self):
+        return self._authenticated
+
+    @authenticated.setter
+    def authenticated(self, value):
+        self._authenticated = value
+
+    @property
+    def session_id(self):
+        """
+        Type:
+            Property
+            
+        Description:
+            Session Identifier
+        
+        Returns:
+            str
+        """
+        return self._session_id
+
+    @session_id.setter
+    def session_id(self, value):
+        self._session_id = value
 
     @property
     def uuid(self):
@@ -321,10 +308,11 @@ class SessionProperty(object):
             | The subject identifier of the user
             | that was externally authenticated.
             | If a session instance has is local superuser set, then the value
-            | of this field is undefined
-            .        
+            | of this field is undefined.
+                    
         Returns:
             str or None
+            
         """
         return self._call('get_auth_user_sid', self._session_id,
                           self._session_id)
@@ -388,3 +376,27 @@ class SessionProperty(object):
             Reference to a Session, or None
         """
         return self._call('get_parent', self._session_id, self._session_id)
+
+
+    #
+    # Public Methods
+    #
+    def change_password(self, old_password, new_password):
+        """
+        Type:
+            Method
+        
+        Scope:
+            Public
+            
+        Description:
+            Change password for the actual user sesssion.
+            
+        Parameters:
+            old_password: str
+            new_password: str
+        
+        Returns:
+            Void
+        """
+        self._call('change_password', old_password, new_password)

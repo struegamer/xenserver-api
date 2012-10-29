@@ -17,11 +17,11 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 ###############################################################################
 
+import sys
 
-from constants import __API_VERSION__
-from connection import Connection
-from parser import Message
-from session import Session
-from vms import VM
-from session import AuthenticationException
-from xenserver import XenServer
+class Properties(object):
+    def __init__(self, connection=None):
+        self._conn = connection
+
+    def _call(self, method, *args, **kwargs):
+        pass
