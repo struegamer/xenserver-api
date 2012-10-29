@@ -22,6 +22,10 @@ import sys
 from connection import Connection
 from session import Session
 
+from constants import VM_TYPE_HOST
+from constants import VM_TYPE_TEMPLATE
+
+
 class XenServer(object):
     def __init__(self, url, username, password):
         self._connection = Connection(url)
@@ -44,10 +48,13 @@ class XenServer(object):
     # Public Methods
     #
 
+    #
+    # Session Related
+    #
+
     def login(self):
         self._session = Session.login(self._connection,
                                                 self._username, self._password)
-        print self._session
         return True
     def login_slave(self):
         self._slave_session = Session.login(self._connection,
@@ -66,3 +73,17 @@ class XenServer(object):
             return True
         return False
 
+    def get_sessions(self):
+        return Session.get_subject_identifiers(self._session)
+
+    def logout_session(self, subject=None):
+        if subject is not None:
+            Session.logout_subject(self._session, subject)
+
+
+    #
+    # VM Related
+    #
+    def get_vm_list(self, vm_type=VM_TYPE_HOST | VM_TYPE_TEMPLATES,
+                    started=False):
+        pass

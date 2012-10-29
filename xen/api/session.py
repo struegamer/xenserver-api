@@ -67,6 +67,21 @@ class Session(Properties):
         session.authenticated = False
         return True
 
+    @staticmethod
+    def get_subject_identifiers(session=None):
+        if session is None:
+            raise Exception('Session no initialized')
+        subject_list = session._call('get_all_subject_identifiers',
+                                   session.session_id)
+        return subject_list
+
+    @staticmethod
+    def logout_subject(session=None):
+        if session is None:
+            raise Exception('Session no initialized')
+        session._call('logout_subject_identifier', session.session_id)
+
+
     @classmethod
     def login(cls, connection, username, password, slave=False):
         """
